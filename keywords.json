@@ -1,0 +1,61 @@
+{
+  "important_words": [
+    {
+      "word": "practice",
+      "meaning": "練習する",
+      "example": "Today, we're going to practice listening to everyday English conversations."
+    },
+    {
+      "word": "native",
+      "meaning": "母国の",
+      "example": "There will be 3 native voices playing at a time."
+    },
+    {
+      "word": "understand",
+      "meaning": "理解する",
+      "example": "Try to listen to them and see if you can understand them."
+    },
+    {
+      "word": "electronic",
+      "meaning": "電子の",
+      "example": "I do, but only electronic cigarettes."
+    },
+    {
+      "word": "favorite",
+      "meaning": "お気に入りの",
+      "example": "What is your favorite Japanese food?"
+    },
+    {
+      "word": "wallet",
+      "meaning": "財布",
+      "example": "I'm looking for my wallet and my smartphone."
+    },
+    {
+      "word": "lesson",
+      "meaning": "レッスン",
+      "example": "If you liked this lesson, please like the video."
+    },
+    {
+      "word": "subscribed",
+      "meaning": "購読した",
+      "example": "If you haven't subscribed to the channel yet, please subscribe to the channel."
+    }
+  ],
+  "important_phrases": [
+    {
+      "phrase": "everyday English conversations",
+      "meaning": "日常の英会話",
+      "example": "we're going to practice listening to everyday English conversations."
+    },
+    {
+      "phrase": "what's the weather like",
+      "meaning": "天気はどうですか",
+      "example": "What's the weather like today?"
+    },
+    {
+      "phrase": "see you next time",
+      "meaning": "また次回お会いしましょう",
+      "example": "See you next time!"
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "quizzes": [
+    {
+      "question": "What is Momo-chan going to practice today?",
+      "choices": [
+        "Listening to music",
+        "Speaking French",
+        "Reading books",
+        "Listening to everyday English conversations"
+      ],
+      "answer": "Listening to everyday English conversations",
+      "explanation": "Momo-chan is going to practice listening to everyday English conversations."
+    },
+    {
+      "question": "What is the weather like today?",
+      "choices": [
+        "Sunny and cool",
+        "Overcast and muggy",
+        "Rainy and windy",
+        "Snowy and cold"
+      ],
+      "answer": "Overcast and muggy",
+      "explanation": "The weather is described as overcast and muggy."
+    },
+    {
+      "question": "What is the speaker's favorite Japanese food?",
+      "choices": [
+        "Sushi",
+        "Ramen",
+        "Tempura",
+        "Udon"
+      ],
+      "answer": "Sushi",
+      "explanation": "The speaker's favorite Japanese food is sushi."
+    },
+    {
+      "question": "What should the listener do if they liked the lesson?",
+      "choices": [
+        "Subscribe to the channel",
+        "Dislike the video",
+        "Unsubscribe from the channel",
+        "Do nothing"
+      ],
+      "answer": "Like the video",
+      "explanation": "The listener should like the video if they liked the lesson."
+    }
+  ]
+}
