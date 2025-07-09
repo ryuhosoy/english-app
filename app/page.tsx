@@ -18,7 +18,7 @@ export default function Home() {
   const handleVideoSubmit = (url: string) => {
     setVideoUrl(url);
     setIsProcessing(true);
-    router.push(`/process?url=${encodeURIComponent(url)}`);
+    router.push(`/add-video?url=${encodeURIComponent(url)}`);
   };
   
   return (

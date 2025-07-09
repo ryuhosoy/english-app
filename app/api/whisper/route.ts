@@ -5,6 +5,7 @@ import { tmpdir } from 'os';
 import path from 'path';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   const apiKey = process.env.OPENAI_API_KEY;

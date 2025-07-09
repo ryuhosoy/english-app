@@ -3,72 +3,171 @@
 import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { useSearchParams } from "next/navigation";
 
 type ProcessingStep = {
   id: string;
   label: string;
   description: string;
+  apiEndpoint?: string;
+};
+
+type ProcessingResult = {
+  transcription?: string;
+  keywords?: any;
+  quiz?: any;
 };
 
 export function ProcessingView({ videoId }: { videoId: string }) {
+  const searchParams = useSearchParams();
+  const videoUrl = searchParams.get("url") || "";
+  
   const [progress, setProgress] = useState(0);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [results, setResults] = useState<ProcessingResult>({});
+  const [error, setError] = useState<string | null>(null);
   
   const processingSteps: ProcessingStep[] = [
     {
       id: "transcribe",
-      label: "Transcribing Audio",
-      description: "Converting speech to text with high accuracy"
+      label: "音声をテキストに変換中",
+      description: "YouTube動画の音声を高精度でテキストに変換しています",
+      apiEndpoint: "/api/youtube_to_text"
     },
     {
       id: "analyze",
-      label: "Analyzing Content",
-      description: "Identifying key concepts and vocabulary"
+      label: "内容を分析中",
+      description: "テキストから重要な概念と語彙を特定しています"
+    },
+    {
+      id: "keywords",
+      label: "重要語彙を抽出中",
+      description: "重要な単語とフレーズを抽出して定義を作成しています",
+      apiEndpoint: "/api/extract_keywords"
     },
     {
       id: "notes",
-      label: "Generating Notes",
-      description: "Creating structured notes from the content"
-    },
-    {
-      id: "vocab",
-      label: "Extracting Vocabulary",
-      description: "Finding important terms and creating definitions"
+      label: "ノートを生成中",
+      description: "内容から構造化されたノートを作成しています"
     },
     {
       id: "quiz",
-      label: "Building Quizzes",
-      description: "Creating interactive exercises to test your understanding"
+      label: "クイズを作成中",
+      description: "理解度を測るためのインタラクティブな練習問題を作成しています",
+      apiEndpoint: "/api/generate_quiz"
     }
   ];
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setProgress((prevProgress) => {
-        if (prevProgress >= 100) {
-          clearInterval(interval);
-          return 100;
-        }
-        
-        const newProgress = prevProgress + 1;
-        
-        // Update current step based on progress
-        const stepSize = 100 / processingSteps.length;
-        const newStepIndex = Math.min(
-          Math.floor(newProgress / stepSize),
-          processingSteps.length - 1
-        );
-        
-        if (newStepIndex !== currentStepIndex) {
-          setCurrentStepIndex(newStepIndex);
-        }
-        
-        return newProgress;
+  // 実際のAPI処理を実行
+  const processVideo = async () => {
+    if (isProcessing) return;
+    
+    setIsProcessing(true);
+    setError(null);
+    
+    try {
+      // Step 1: YouTube動画をテキストに変換
+      setCurrentStepIndex(0);
+      setProgress(20);
+      
+      const transcriptionResponse = await fetch('/api/youtube_to_text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: videoUrl })
       });
-    }, 120); // Faster for demo purposes
 
-    return () => clearInterval(interval);
-  }, [currentStepIndex, processingSteps.length]);
+      console.log("transcriptionResponse", transcriptionResponse);
+      
+      if (!transcriptionResponse.ok) {
+        console.log("transcriptionResponse", transcriptionResponse);
+        throw new Error('音声の変換に失敗しました');
+      }
+      
+      const transcriptionData = await transcriptionResponse.json();
+      const transcription = transcriptionData.text;
+      setResults(prev => ({ ...prev, transcription }));
+      
+      // Step 2: キーワード抽出
+      setCurrentStepIndex(2);
+      setProgress(60);
+      
+      const keywordsResponse = await fetch('/api/extract_keywords', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: transcription })
+      });
+      
+      if (!keywordsResponse.ok) {
+        throw new Error('キーワードの抽出に失敗しました');
+      }
+      
+      const keywordsData = await keywordsResponse.json();
+      setResults(prev => ({ ...prev, keywords: keywordsData }));
+
+      console.log('keywordsData:', keywordsData);
+      
+      // Step 3: クイズ生成
+      setCurrentStepIndex(4);
+      setProgress(80);
+      
+      const quizResponse = await fetch('/api/generate_quiz', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: transcription })
+      });
+      
+      if (!quizResponse.ok) {
+        throw new Error('クイズの生成に失敗しました');
+      }
+      
+      const quizData = await quizResponse.json();
+      setResults(prev => ({ ...prev, quiz: quizData }));
+      
+      // 完了
+      setProgress(100);
+      
+      // 結果をlocalStorageに保存（結果ページで使用）
+      localStorage.setItem('processingResults', JSON.stringify({
+        transcription,
+        keywords: keywordsData,
+        quiz: quizData,
+        videoUrl
+      }));
+      
+    } catch (err: any) {
+      setError(err.message);
+      console.error('Processing error:', err);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  useEffect(() => {
+    if (videoUrl && !isProcessing) {
+      processVideo();
+    }
+  }, [videoUrl]);
+
+  // エラーが発生した場合の表示
+  if (error) {
+    return (
+      <div className="max-w-md mx-auto py-8">
+        <div className="text-center">
+          <div className="text-red-600 mb-4">
+            <h3 className="text-lg font-semibold">処理中にエラーが発生しました</h3>
+            <p className="text-sm">{error}</p>
+          </div>
+          <button 
+            onClick={processVideo}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+          >
+            再試行
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-md mx-auto py-8">
@@ -88,9 +187,9 @@ export function ProcessingView({ videoId }: { videoId: string }) {
           )}
         </div>
         
-        <h2 className="text-2xl font-bold mb-2">Processing Your Video</h2>
+        <h2 className="text-2xl font-bold mb-2">動画を処理中</h2>
         <p className="text-muted-foreground">
-          We're turning this video into personalized learning materials
+          この動画をパーソナライズされた学習教材に変換しています
         </p>
       </div>
       

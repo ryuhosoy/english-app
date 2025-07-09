@@ -1,12 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { VideoUrlInput } from "@/components/video-input/VideoUrlInput";
 import { 
   BookOpen, 
   Brain, 
@@ -25,6 +28,7 @@ import {
   LogOut,
   Plus
 } from "lucide-react";
+import Link from "next/link";
 
 // Mock data for demonstration
 const mockUser = {
@@ -113,6 +117,14 @@ const weeklyProgress = [
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("overview");
+  const [isAddVideoOpen, setIsAddVideoOpen] = useState(false);
+  const router = useRouter();
+
+  const handleAddVideo = (url: string) => {
+    setIsAddVideoOpen(false);
+    // 処理ページに遷移
+    router.push(`/process?url=${encodeURIComponent(url)}`);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -125,10 +137,12 @@ export default function DashboardPage() {
               <h1 className="text-2xl font-bold">LinguaNote AI</h1>
             </div>
             <div className="flex items-center gap-4">
-              <Button variant="outline" size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                新しい動画
-              </Button>
+              <Link href="/add-video">
+                <Button variant="outline" size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  新しい動画
+                </Button>
+              </Link>
               <Button variant="ghost" size="icon">
                 <Settings className="h-4 w-4" />
               </Button>
@@ -302,10 +316,22 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Button className="h-20 flex flex-col gap-2">
-                    <Plus className="h-6 w-6" />
-                    新しい動画を追加
-                  </Button>
+                  <Dialog open={isAddVideoOpen} onOpenChange={setIsAddVideoOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="h-20 flex flex-col gap-2">
+                        <Plus className="h-6 w-6" />
+                        新しい動画を追加
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>新しい動画を追加</DialogTitle>
+                      </DialogHeader>
+                      <div className="py-4">
+                        <VideoUrlInput onSubmit={handleAddVideo} />
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                   <Button variant="outline" className="h-20 flex flex-col gap-2">
                     <RotateCw className="h-6 w-6" />
                     単語復習
@@ -321,46 +347,90 @@ export default function DashboardPage() {
 
           <TabsContent value="recent" className="space-y-6">
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>最近学習した動画</CardTitle>
+                <Dialog open={isAddVideoOpen} onOpenChange={setIsAddVideoOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm">
+                      <Plus className="h-4 w-4 mr-2" />
+                      新しい動画
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>新しい動画を追加</DialogTitle>
+                    </DialogHeader>
+                    <div className="py-4">
+                      <VideoUrlInput onSubmit={handleAddVideo} />
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {recentVideos.map((video) => (
-                    <div key={video.id} className="flex items-center gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                      <div className="relative">
-                        <img 
-                          src={video.thumbnail} 
-                          alt={video.title}
-                          className="w-24 h-16 object-cover rounded"
-                        />
-                        <div className="absolute bottom-1 right-1 bg-black/80 text-white text-xs px-1 rounded">
-                          {video.duration}
+                {recentVideos.length > 0 ? (
+                  <div className="space-y-4">
+                    {recentVideos.map((video) => (
+                      <div key={video.id} className="flex items-center gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                        <div className="relative">
+                          <img 
+                            src={video.thumbnail} 
+                            alt={video.title}
+                            className="w-24 h-16 object-cover rounded"
+                          />
+                          <div className="absolute bottom-1 right-1 bg-black/80 text-white text-xs px-1 rounded">
+                            {video.duration}
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-medium mb-1">{video.title}</h3>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {video.completedAt}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Star className="h-3 w-3" />
-                            スコア: {video.score}%
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <BookOpen className="h-3 w-3" />
-                            {video.wordsLearned}語学習
-                          </span>
+                        <div className="flex-1">
+                          <h3 className="font-medium mb-1">{video.title}</h3>
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {video.completedAt}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Star className="h-3 w-3" />
+                              スコア: {video.score}%
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <BookOpen className="h-3 w-3" />
+                              {video.wordsLearned}語学習
+                            </span>
+                          </div>
                         </div>
+                        <Button variant="ghost" size="icon">
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
                       </div>
-                      <Button variant="ghost" size="icon">
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                      <Play className="h-8 w-8 text-muted-foreground" />
                     </div>
-                  ))}
-                </div>
+                    <h3 className="text-lg font-medium mb-2">まだ学習した動画がありません</h3>
+                    <p className="text-muted-foreground mb-6">
+                      最初の動画を追加して学習を始めましょう
+                    </p>
+                    <Dialog open={isAddVideoOpen} onOpenChange={setIsAddVideoOpen}>
+                      <DialogTrigger asChild>
+                        <Button>
+                          <Plus className="h-4 w-4 mr-2" />
+                          最初の動画を追加
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>新しい動画を追加</DialogTitle>
+                        </DialogHeader>
+                        <div className="py-4">
+                          <VideoUrlInput onSubmit={handleAddVideo} />
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

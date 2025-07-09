@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   const { text } = await req.json();
@@ -60,6 +61,8 @@ ${text}
         max_tokens: 2000,
       }),
     });
+
+    console.log('response:', response);
 
     const data = await response.json();
     let quizzes;

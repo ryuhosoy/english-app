@@ -1,241 +1,129 @@
 "use client";
 
-import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Volume2, RotateCw, Check, Bookmark } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Brain, BookOpen, Volume2 } from "lucide-react";
 
-// Mock vocabulary data
-const vocabularyItems = [
-  {
-    id: 1,
-    word: "comprehension",
-    partOfSpeech: "noun",
-    definition: "The ability to understand something.",
-    example: "Reading comprehension is essential for academic success.",
-    timestamp: "0:45",
-    difficulty: "intermediate"
-  },
-  {
-    id: 2,
-    word: "authentic",
-    partOfSpeech: "adjective",
-    definition: "Of undisputed origin and not a copy; genuine.",
-    example: "It's important to practice with authentic materials like real English videos and podcasts.",
-    timestamp: "1:23",
-    difficulty: "intermediate"
-  },
-  {
-    id: 3,
-    word: "gradually",
-    partOfSpeech: "adverb",
-    definition: "In a gradual way; slowly and steadily.",
-    example: "You should gradually increase the difficulty of your listening materials.",
-    timestamp: "2:17",
-    difficulty: "beginner"
-  },
-  {
-    id: 4,
-    word: "implement",
-    partOfSpeech: "verb",
-    definition: "Put (a decision, plan, agreement, etc.) into effect.",
-    example: "Let's implement the listen-pause-predict strategy in your daily practice.",
-    timestamp: "3:05",
-    difficulty: "intermediate"
-  },
-  {
-    id: 5,
-    word: "strategy",
-    partOfSpeech: "noun",
-    definition: "A plan of action designed to achieve a long-term or overall aim.",
-    example: "Having a good listening strategy can improve your comprehension dramatically.",
-    timestamp: "3:41",
-    difficulty: "beginner"
-  },
-  {
-    id: 6,
-    word: "simultaneously",
-    partOfSpeech: "adverb",
-    definition: "At the same time.",
-    example: "Practice speaking and listening simultaneously to improve both skills.",
-    timestamp: "5:20",
-    difficulty: "advanced"
-  },
-];
-
-export function VocabularyView() {
-  const [savedWords, setSavedWords] = useState<number[]>([]);
-  
-  const toggleSaveWord = (id: number) => {
-    setSavedWords(prev => 
-      prev.includes(id) 
-        ? prev.filter(wordId => wordId !== id)
-        : [...prev, id]
-    );
+interface VocabularyViewProps {
+  keywords: {
+    important_words: Array<{
+      word: string;
+      meaning: string;
+      example: string;
+    }>;
+    important_phrases: Array<{
+      phrase: string;
+      meaning: string;
+      example: string;
+    }>;
   };
+}
+
+export function VocabularyView({ keywords }: VocabularyViewProps) {
+  const { important_words, important_phrases } = keywords;
 
   return (
     <div className="space-y-6">
+      {/* 重要単語 */}
       <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle>Vocabulary</CardTitle>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800">
-                6 Words
-              </Badge>
-              <Button variant="outline" size="sm">
-                <RotateCw className="h-3.5 w-3.5 mr-1" />
-                Flashcards
-              </Button>
-            </div>
-          </div>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Brain className="h-5 w-5 text-blue-600" />
+            重要単語 ({important_words.length})
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="all" className="w-full">
-            <TabsList className="mb-4">
-              <TabsTrigger value="all">All Words</TabsTrigger>
-              <TabsTrigger value="beginner">Beginner</TabsTrigger>
-              <TabsTrigger value="intermediate">Intermediate</TabsTrigger>
-              <TabsTrigger value="advanced">Advanced</TabsTrigger>
-              <TabsTrigger value="saved">Saved</TabsTrigger>
-            </TabsList>
-            
-            <VocabularyTabContent
-              value="all"
-              items={vocabularyItems}
-              savedWords={savedWords}
-              toggleSaveWord={toggleSaveWord}
-            />
-            
-            <VocabularyTabContent
-              value="beginner"
-              items={vocabularyItems.filter(item => item.difficulty === "beginner")}
-              savedWords={savedWords}
-              toggleSaveWord={toggleSaveWord}
-            />
-            
-            <VocabularyTabContent
-              value="intermediate"
-              items={vocabularyItems.filter(item => item.difficulty === "intermediate")}
-              savedWords={savedWords}
-              toggleSaveWord={toggleSaveWord}
-            />
-            
-            <VocabularyTabContent
-              value="advanced"
-              items={vocabularyItems.filter(item => item.difficulty === "advanced")}
-              savedWords={savedWords}
-              toggleSaveWord={toggleSaveWord}
-            />
-            
-            <VocabularyTabContent
-              value="saved"
-              items={vocabularyItems.filter(item => savedWords.includes(item.id))}
-              savedWords={savedWords}
-              toggleSaveWord={toggleSaveWord}
-            />
-          </Tabs>
+          <Accordion type="single" collapsible className="w-full">
+            {important_words.map((word, index) => (
+              <AccordionItem key={index} value={`word-${index}`}>
+                <AccordionTrigger className="text-left">
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline" className="font-mono">
+                      {word.word}
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">
+                      {word.meaning}
+                    </span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="space-y-3 p-4 bg-muted/30 rounded-lg">
+                    <div>
+                      <h4 className="font-semibold text-sm mb-1">意味</h4>
+                      <p className="text-sm">{word.meaning}</p>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-sm mb-1">例文</h4>
+                      <p className="text-sm italic">"{word.example}"</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary">
+                        <Volume2 className="h-3 w-3" />
+                        発音を聞く
+                      </button>
+                      <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary">
+                        <BookOpen className="h-3 w-3" />
+                        詳細を見る
+                      </button>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         </CardContent>
       </Card>
-    </div>
-  );
-}
 
-type VocabularyTabContentProps = {
-  value: string;
-  items: typeof vocabularyItems;
-  savedWords: number[];
-  toggleSaveWord: (id: number) => void;
-};
-
-function VocabularyTabContent({
-  value,
-  items,
-  savedWords,
-  toggleSaveWord,
-}: VocabularyTabContentProps) {
-  return (
-    <TabsContent value={value} className="m-0 pt-4">
-      <div className="space-y-4">
-        {items.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            No words in this category
-          </div>
-        ) : (
-          items.map((item) => (
-            <VocabularyCard
-              key={item.id}
-              item={item}
-              isSaved={savedWords.includes(item.id)}
-              onToggleSave={() => toggleSaveWord(item.id)}
-            />
-          ))
-        )}
-      </div>
-    </TabsContent>
-  );
-}
-
-type VocabularyCardProps = {
-  item: typeof vocabularyItems[0];
-  isSaved: boolean;
-  onToggleSave: () => void;
-};
-
-function VocabularyCard({ item, isSaved, onToggleSave }: VocabularyCardProps) {
-  return (
-    <div className="border rounded-lg p-4 group transition-all hover:border-primary/20 hover:bg-primary/5">
-      <div className="flex justify-between mb-1">
-        <div className="flex items-center gap-2">
-          <h3 className="font-bold text-lg">{item.word}</h3>
-          <Badge variant="outline" className="text-xs">
-            {item.partOfSpeech}
-          </Badge>
-        </div>
-        <div className="flex items-center gap-1">
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-8 w-8 rounded-full"
-            onClick={() => {
-              // In a real app, this would play the pronunciation
-            }}
-          >
-            <Volume2 className="h-4 w-4" />
-            <span className="sr-only">Play pronunciation</span>
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            className={`h-8 w-8 rounded-full ${
-              isSaved ? "text-yellow-500 hover:text-yellow-600" : ""
-            }`}
-            onClick={onToggleSave}
-          >
-            <Bookmark
-              className={`h-4 w-4 ${isSaved ? "fill-current" : ""}`}
-            />
-            <span className="sr-only">
-              {isSaved ? "Unsave word" : "Save word"}
-            </span>
-          </Button>
-        </div>
-      </div>
-      
-      <div className="text-sm text-muted-foreground mb-2">
-        {item.definition}
-      </div>
-      
-      <div className="text-sm border-l-2 border-primary/30 pl-3 py-1 bg-primary/5 rounded-sm">
-        "{item.example}"
-      </div>
-      
-      <div className="mt-2 text-xs text-muted-foreground">
-        Appears at {item.timestamp}
-      </div>
+      {/* 重要フレーズ */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BookOpen className="h-5 w-5 text-green-600" />
+            重要フレーズ ({important_phrases.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Accordion type="single" collapsible className="w-full">
+            {important_phrases.map((phrase, index) => (
+              <AccordionItem key={index} value={`phrase-${index}`}>
+                <AccordionTrigger className="text-left">
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline" className="font-mono">
+                      {phrase.phrase}
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">
+                      {phrase.meaning}
+                    </span>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="space-y-3 p-4 bg-muted/30 rounded-lg">
+                    <div>
+                      <h4 className="font-semibold text-sm mb-1">意味</h4>
+                      <p className="text-sm">{phrase.meaning}</p>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-sm mb-1">例文</h4>
+                      <p className="text-sm italic">"{phrase.example}"</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary">
+                        <Volume2 className="h-3 w-3" />
+                        発音を聞く
+                      </button>
+                      <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary">
+                        <BookOpen className="h-3 w-3" />
+                        詳細を見る
+                      </button>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </CardContent>
+      </Card>
     </div>
   );
 }
