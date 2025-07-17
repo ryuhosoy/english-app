@@ -14,7 +14,8 @@ import {
   CheckCircle2,
   Clock,
   Target,
-  Star
+  Star,
+  X
 } from "lucide-react";
 import Link from "next/link";
 import { extractVideoId } from "@/lib/utils";
@@ -55,6 +56,7 @@ export default function ResultsPage() {
   const [activeTab, setActiveTab] = useState("overview");
   const [results, setResults] = useState<ProcessingResults | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showVideoPlayer, setShowVideoPlayer] = useState(false);
 
   useEffect(() => {
     // localStorageから処理結果を取得
@@ -76,6 +78,14 @@ export default function ResultsPage() {
 
   const handleBackToDashboard = () => {
     router.push('/dashboard');
+  };
+
+  const handleVideoClick = () => {
+    setShowVideoPlayer(true);
+  };
+
+  const handleCloseVideo = () => {
+    setShowVideoPlayer(false);
   };
 
   if (loading) {
@@ -149,7 +159,10 @@ export default function ResultsPage() {
           <Card className="mb-8">
             <CardContent className="p-6">
               <div className="flex items-start gap-6">
-                <div className="relative w-full max-w-xs aspect-video bg-muted rounded-lg overflow-hidden">
+                <div 
+                  className="relative w-full max-w-xs aspect-video bg-muted rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+                  onClick={handleVideoClick}
+                >
                   {videoId ? (
                     <img
                       src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
@@ -175,7 +188,7 @@ export default function ResultsPage() {
                     {videoUrl ? `YouTube動画 - ${videoId}` : '動画情報'}
                   </h3>
                   <p className="text-muted-foreground mb-4">
-                    {videoUrl ? 'YouTube動画から生成された学習教材です。' : '動画の詳細情報が利用できません。'}
+                    {videoUrl ? 'YouTube動画から生成された学習教材です。サムネイルをクリックして動画を再生できます。' : '動画の詳細情報が利用できません。'}
                   </p>
                   <div className="flex flex-wrap gap-2 mb-4">
                     <Badge variant="secondary">
@@ -199,6 +212,28 @@ export default function ResultsPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* YouTube動画プレイヤーモーダル */}
+          {showVideoPlayer && videoId && (
+            <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+              <div className="relative w-full max-w-4xl aspect-video bg-black rounded-lg overflow-hidden">
+                <button
+                  onClick={handleCloseVideo}
+                  className="absolute top-4 right-4 z-10 bg-black/50 text-white rounded-full p-2 hover:bg-black/70 transition-colors"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+                <iframe
+                  src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
+                  title="YouTube video player"
+                  className="w-full h-full"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              </div>
+            </div>
+          )}
 
           {/* 生成された教材の概要 */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
