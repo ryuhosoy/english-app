@@ -60,19 +60,18 @@ ${text}
           { role: 'user', content: prompt },
         ],
         temperature: 0.7,
-        max_tokens: 1000,
+        max_tokens: 2000,
       }),
     });
 
     console.log('OpenAI response status:', response.status);
     const data = await response.json();
-    console.log('data.choices[0].message:', data.choices[0].message);
     console.log('OpenAI response received');
     
     // OpenAIの返答からJSON部分を抽出
     let result;
     try {
-      result = data.choices[0].message.content;
+      result = JSON.parse(data.choices[0].message.content);
       console.log('result:', result);
       console.log('=== Success ===');
       // console.log('Extracted words count:', result.important_words?.length || 0);

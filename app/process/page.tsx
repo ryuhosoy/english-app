@@ -18,20 +18,20 @@ export default function ProcessPage() {
   const [showCompletionMessage, setShowCompletionMessage] = useState(false);
   
   useEffect(() => {
-    // Simulate processing time
-    const timer = setTimeout(() => {
-      setIsProcessingComplete(true);
-      // 完了メッセージを少し遅れて表示
-      setTimeout(() => {
-        setShowCompletionMessage(true);
-        // 3秒後に結果ページに自動遷移
-        setTimeout(() => {
-          router.push(`/results?url=${encodeURIComponent(videoUrl)}`);
-        }, 3000);
-      }, 1000);
-    }, 8000);
+    // // Simulate processing time
+    // const timer = setTimeout(() => {
+    //   setIsProcessingComplete(true);
+    //   // 完了メッセージを少し遅れて表示
+    //   setTimeout(() => {
+    //     setShowCompletionMessage(true);
+    //     // 3秒後に結果ページに自動遷移
+    //     setTimeout(() => {
+    //       router.push(`/results?url=${encodeURIComponent(videoUrl)}`);
+    //     }, 3000);
+    //   }, 1000);
+    // }, 8000);
     
-    return () => clearTimeout(timer);
+    // return () => clearTimeout(timer);
   }, [videoUrl, router]);
 
   const handleBackToDashboard = () => {

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 
 type ProcessingStep = {
   id: string;
@@ -20,6 +20,7 @@ type ProcessingResult = {
 
 export function ProcessingView({ videoId }: { videoId: string }) {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const videoUrl = searchParams.get("url") || "";
   
   const [progress, setProgress] = useState(0);
@@ -134,6 +135,11 @@ export function ProcessingView({ videoId }: { videoId: string }) {
         quiz: quizData,
         videoUrl
       }));
+      
+      // 処理完了後、結果ページに移動
+      setTimeout(() => {
+        router.push('/results?url=' + videoUrl);
+      }, 1000); // 1秒後に移動（完了の表示を見せるため）
       
     } catch (err: any) {
       setError(err.message);

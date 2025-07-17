@@ -62,12 +62,13 @@ ${text}
       }),
     });
 
-    console.log('response:', response);
+    console.log('response in generate_quiz:', response);
 
     const data = await response.json();
     let quizzes;
     try {
       const parsed = JSON.parse(data.choices[0].message.content);
+      console.log('parsed in generate_quiz:', parsed);
       quizzes = parsed.quizzes;
     } catch (e) {
       return NextResponse.json({ error: 'OpenAIの返答をパースできませんでした', raw: data }, { status: 500 });

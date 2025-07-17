@@ -150,12 +150,21 @@ export default function ResultsPage() {
             <CardContent className="p-6">
               <div className="flex items-start gap-6">
                 <div className="relative w-full max-w-xs aspect-video bg-muted rounded-lg overflow-hidden">
-                  {videoId && (
+                  {videoId ? (
                     <img
                       src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
                       alt="Video thumbnail"
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // 高解像度サムネイルが失敗した場合、標準解像度を試す
+                        const target = e.target as HTMLImageElement;
+                        target.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+                      }}
                     />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-muted">
+                      <Play className="h-12 w-12 text-muted-foreground" />
+                    </div>
                   )}
                   <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
                     <Play className="h-12 w-12 text-white" />
@@ -163,10 +172,10 @@ export default function ResultsPage() {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xl font-bold mb-2">
-                    English Listening Practice - Daily Conversation
+                    {videoUrl ? `YouTube動画 - ${videoId}` : '動画情報'}
                   </h3>
                   <p className="text-muted-foreground mb-4">
-                    日常会話のリスニング練習動画です。自然な英語表現を学びましょう。
+                    {videoUrl ? 'YouTube動画から生成された学習教材です。' : '動画の詳細情報が利用できません。'}
                   </p>
                   <div className="flex flex-wrap gap-2 mb-4">
                     <Badge variant="secondary">
