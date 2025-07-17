@@ -76,6 +76,10 @@ export default function ResultsPage() {
     router.push(`/learn?videoId=${videoId}`);
   };
 
+  const handleWatchVideo = () => {
+    setShowVideoPlayer(true);
+  };
+
   const handleBackToDashboard = () => {
     router.push('/dashboard');
   };
@@ -204,10 +208,16 @@ export default function ResultsPage() {
                       4.8/5.0
                     </Badge>
                   </div>
-                  <Button onClick={handleStartLearning} className="w-full sm:w-auto">
-                    <BookOpen className="h-4 w-4 mr-2" />
-                    学習を開始する
-                  </Button>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button onClick={handleStartLearning} className="w-full sm:w-auto">
+                      <BookOpen className="h-4 w-4 mr-2" />
+                      学習を開始する
+                    </Button>
+                    <Button variant="outline" onClick={handleWatchVideo} className="w-full sm:w-auto">
+                      <Play className="h-4 w-4 mr-2" />
+                      動画を再生
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CardContent>
