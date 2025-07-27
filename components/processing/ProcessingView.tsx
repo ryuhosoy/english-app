@@ -86,7 +86,10 @@ export function ProcessingView({ videoId }: { videoId: string }) {
       }
       
       const transcriptionData = await transcriptionResponse.json();
-      const transcription = transcriptionData.text;
+      // srt対応: srtがあれば保存
+      const srt = transcriptionData.srt;
+      const transcription = transcriptionData.text || '';
+      console.log("transcription", transcription);
       setResults(prev => ({ ...prev, transcription }));
       
       // Step 2: キーワード抽出
@@ -128,12 +131,13 @@ export function ProcessingView({ videoId }: { videoId: string }) {
       // 完了
       setProgress(100);
       
-      // 結果をlocalStorageに保存（結果ページで使用）
+      // 結果をlocalStorageに保存（srtも含める）
       localStorage.setItem('processingResults', JSON.stringify({
         transcription,
         keywords: keywordsData,
         quiz: quizData,
-        videoUrl
+        videoUrl,
+        srt // 追加
       }));
       
       // 処理完了後、結果ページに移動

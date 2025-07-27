@@ -46,6 +46,7 @@ type ProcessingResults = {
     }>;
   };
   videoUrl: string;
+  srt?: string; // 追加
 };
 
 type SubtitleSegment = {
@@ -85,6 +86,7 @@ export default function LearnPage() {
   const [showControls, setShowControls] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [subtitles, setSubtitles] = useState<SubtitleSegment[]>([]);
 
   const playerRef = useRef<HTMLDivElement>(null);
   const playerInstanceRef = useRef<any>(null);
@@ -96,6 +98,10 @@ export default function LearnPage() {
       try {
         const parsedResults = JSON.parse(storedResults);
         setResults(parsedResults);
+        // srtがあれば字幕をパース
+        if (parsedResults.srt) {
+          setSubtitles(parseSrt(parsedResults.srt));
+        }
       } catch (error) {
         console.error('Failed to parse stored results:', error);
       }
@@ -168,26 +174,46 @@ export default function LearnPage() {
     return () => clearInterval(interval);
   }, [isPlaying]);
 
-  // 字幕セグメントを生成（簡易版）
-  const generateSubtitles = (text: string): SubtitleSegment[] => {
-    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
-    const segments: SubtitleSegment[] = [];
-    let currentTime = 0;
-    
-    sentences.forEach((sentence, index) => {
-      const duration = Math.max(3, sentence.length * 0.1); // 最低3秒、文字数に応じて調整
-      segments.push({
-        start: currentTime,
-        end: currentTime + duration,
-        text: sentence.trim()
+  // SRTをAPIから取得してパース（localStorageにない場合のフォールバック）
+  useEffect(() => {
+    const fetchSrt = async () => {
+      // localStorageにsrtがない場合のみAPIを呼び出す
+      if (subtitles.length > 0) return;
+      
+      const videoUrl = searchParams.get('url') || '';
+      if (!videoUrl) return;
+      const response = await fetch('/api/youtube_to_text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: videoUrl })
       });
-      currentTime += duration;
-    });
-    
-    return segments;
-  };
+      if (!response.ok) return;
+      const data = await response.json();
+      if (data.srt) {
+        setSubtitles(parseSrt(data.srt));
+      }
+    };
+    fetchSrt();
+  }, [searchParams, subtitles.length]);
 
-  const subtitles = results ? generateSubtitles(results.transcription) : [];
+  // SRTパース関数
+  function parseSrt(srt: string): SubtitleSegment[] {
+    const blocks = srt.trim().split(/\n\s*\n/);
+    const segments: SubtitleSegment[] = [];
+    for (const block of blocks) {
+      const lines = block.split('\n');
+      if (lines.length >= 3) {
+        const match = lines[1].match(/(\d{2}):(\d{2}):(\d{2}),(\d{3}) --> (\d{2}):(\d{2}):(\d{2}),(\d{3})/);
+        if (match) {
+          const start = (+match[1]) * 3600 + (+match[2]) * 60 + (+match[3]) + (+match[4]) / 1000;
+          const end = (+match[5]) * 3600 + (+match[6]) * 60 + (+match[7]) + (+match[8]) / 1000;
+          const text = lines.slice(2).join(' ');
+          segments.push({ start, end, text });
+        }
+      }
+    }
+    return segments;
+  }
 
   // 現在の字幕を更新
   useEffect(() => {
