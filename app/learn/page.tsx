@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -70,6 +70,7 @@ declare global {
 
 export default function LearnPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const videoId = searchParams.get("videoId") || "";
   const [results, setResults] = useState<ProcessingResults | null>(null);
   const [loading, setLoading] = useState(true);
@@ -106,6 +107,18 @@ export default function LearnPage() {
         console.error('Failed to parse stored results:', error);
       }
     }
+    
+    // localStorageから登録した単語を取得
+    const storedWords = localStorage.getItem('registeredWords');
+    if (storedWords) {
+      try {
+        const parsedWords = JSON.parse(storedWords);
+        setRegisteredWords(parsedWords);
+      } catch (error) {
+        console.error('Failed to parse stored words:', error);
+      }
+    }
+    
     setLoading(false);
   }, []);
 
@@ -297,12 +310,18 @@ export default function LearnPage() {
     // 重複チェック
     const isDuplicate = registeredWords.some(rw => rw.word === newWord.word);
     if (!isDuplicate) {
-      setRegisteredWords(prev => [...prev, newWord]);
+      const updatedWords = [...registeredWords, newWord];
+      setRegisteredWords(updatedWords);
+      // localStorageに保存
+      localStorage.setItem('registeredWords', JSON.stringify(updatedWords));
     }
   };
 
   const handleRemoveWord = (wordToRemove: string) => {
-    setRegisteredWords(prev => prev.filter(w => w.word !== wordToRemove));
+    const updatedWords = registeredWords.filter(w => w.word !== wordToRemove);
+    setRegisteredWords(updatedWords);
+    // localStorageに保存
+    localStorage.setItem('registeredWords', JSON.stringify(updatedWords));
   };
 
   const handleQuizAnswer = (answer: string) => {
@@ -347,7 +366,7 @@ export default function LearnPage() {
           <p className="text-muted-foreground mb-4">
             動画の処理が完了していないか、データが保存されていません。
           </p>
-          <Button onClick={() => window.history.back()}>
+          <Button onClick={() => router.push('/dashboard')}>
             戻る
           </Button>
         </div>
@@ -365,7 +384,7 @@ export default function LearnPage() {
               <BookOpen className="h-8 w-8 text-primary" />
               <h1 className="text-2xl font-bold">LinguaNote AI - 学習モード</h1>
             </div>
-            <Button variant="outline" onClick={() => window.history.back()}>
+            <Button variant="outline" onClick={() => router.push('/dashboard')}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               戻る
             </Button>
@@ -640,7 +659,7 @@ export default function LearnPage() {
                     <Button variant="outline" onClick={() => setShowQuiz(true)}>
                       クイズを再挑戦
                     </Button>
-                    <Button onClick={() => window.history.back()}>
+                    <Button onClick={() => router.push('/dashboard')}>
                       学習を終了
                     </Button>
                   </div>
