@@ -11,111 +11,90 @@ import Link from "next/link";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useToast } from "@/hooks/use-toast";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { signIn, user, session, loading } = useAuth();
+  const { signUp, user } = useAuth();
   const { toast } = useToast();
 
-  console.log('ログインページ コンポーネント初期化:', {
-    router: router,
-    hasRouter: !!router,
-    hasPushMethod: !!router?.push,
-    user: user,
-    timestamp: new Date().toISOString()
-  });
-
+  // ログイン済みの場合はダッシュボードにリダイレクト
   useEffect(() => {
-    // ローディング中は何もしない
-    if (loading) {
-      console.log('ログインページ: 認証状態確認中...');
+    if (user) {
+      console.log('登録ページ: ユーザーがログイン済み - ダッシュボードにリダイレクト');
+      router.push('/dashboard');
+    }
+  }, [user, router]);
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (password !== confirmPassword) {
+      toast({
+        title: "パスワードエラー",
+        description: "パスワードが一致しません",
+        variant: "destructive",
+      });
       return;
     }
 
-    console.log('ログインページ useEffect実行:', {
-      user: user,
-      hasUser: !!user,
-      session: session,
-      hasSession: !!session,
-      timestamp: new Date().toISOString()
-    });
-    
-    if (user) {
-      router.push('/dashboard');
-      console.log('ログインページ: ユーザーがログイン済み - ミドルウェアでリダイレクト処理');
+    if (password.length < 6) {
+      toast({
+        title: "パスワードエラー",
+        description: "パスワードは6文字以上で入力してください",
+        variant: "destructive",
+      });
+      return;
     }
-  }, [user, session, loading, router]);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
     setIsLoading(true);
     
     try {
-      console.log('ログイン試行中:', { email, timestamp: new Date().toISOString() });
+      console.log('新規登録試行中:', { 
+        email, 
+        timestamp: new Date().toISOString() 
+      });
       
-      const { error } = await signIn(email, password);
+      const { error } = await signUp(email, password);
       
       if (error) {
-        console.error('ログインエラー:', error);
+        console.error('新規登録エラー:', error);
         toast({
-          title: "ログインエラー",
+          title: "登録エラー",
           description: error.message,
           variant: "destructive",
         });
       } else {
-        console.log('ログイン成功:', { 
+        console.log('新規登録成功:', { 
           email, 
-          timestamp: new Date().toISOString(),
-          userAgent: navigator.userAgent
+          timestamp: new Date().toISOString()
         });
         
         toast({
-          title: "ログイン成功",
-          description: "ダッシュボードにリダイレクトします",
+          title: "登録成功",
+          description: "確認メールを送信しました。メールを確認してログインしてください。",
         });
         
-        // ログイン成功時のログ出力のみ（リダイレクトはミドルウェアで処理）
-        console.log('ログイン成功 - ミドルウェアでリダイレクト処理');
+        // 登録後はログインページに手動でリダイレクト（AuthProviderでは自動リダイレクトしない）
+        setTimeout(() => {
+          router.push('/login');
+        }, 1000);
       }
     } catch (error) {
-      console.error('ログイン処理中にエラーが発生:', error);
+      console.error('新規登録処理中にエラーが発生:', error);
       toast({
         title: "エラー",
-        description: "ログイン中にエラーが発生しました",
+        description: "登録中にエラーが発生しました",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
   };
-
-
-
-  // ローディング中はローディング画面を表示
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">認証状態を確認中...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // ユーザーがログイン済みの場合は何も表示しない（useEffectでリダイレクト）
-  if (user) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-muted-foreground">リダイレクト中...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -124,13 +103,13 @@ export default function LoginPage() {
           <div className="flex justify-center mb-4">
             <Brain className="h-12 w-12 text-primary" />
           </div>
-          <CardTitle className="text-2xl font-bold">LinguaNote AI</CardTitle>
+          <CardTitle className="text-2xl font-bold">アカウント作成</CardTitle>
           <p className="text-muted-foreground">
-            英語学習を効率化するAIアシスタント
+            LinguaNote AIで英語学習を始めましょう
           </p>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleRegister} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">メールアドレス</Label>
               <div className="relative">
@@ -154,7 +133,7 @@ export default function LoginPage() {
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="パスワードを入力"
+                  placeholder="パスワードを入力（6文字以上）"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10 pr-10"
@@ -176,20 +155,49 @@ export default function LoginPage() {
               </div>
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">パスワード確認</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder="パスワードを再入力"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="pl-10 pr-10"
+                  required
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+
             <Button 
               type="submit" 
               className="w-full" 
               disabled={isLoading}
             >
-              {isLoading ? "ログイン中..." : "ログイン"}
+              {isLoading ? "登録中..." : "アカウント作成"}
             </Button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
-              アカウントをお持ちでない方は{" "}
-              <Link href="/register" className="text-primary hover:underline">
-                新規登録
+              既にアカウントをお持ちの方は{" "}
+              <Link href="/login" className="text-primary hover:underline">
+                ログイン
               </Link>
             </p>
           </div>

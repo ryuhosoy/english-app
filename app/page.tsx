@@ -8,12 +8,14 @@ import { VideoUrlInput } from "@/components/video-input/VideoUrlInput";
 import { HeroSection } from "@/components/layout/HeroSection";
 import { FeatureCards } from "@/components/layout/FeatureCards";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { useAuth } from "@/components/providers/auth-provider";
 import { Brain as LangBrain, Lightbulb, NotebookPen, PenLine } from "lucide-react";
 
 export default function Home() {
   const router = useRouter();
   const [videoUrl, setVideoUrl] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const { user } = useAuth();
   
   const handleVideoSubmit = (url: string) => {
     setVideoUrl(url);
@@ -31,8 +33,25 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-4">
             <ThemeToggle />
-            <Button variant="outline">Sign In</Button>
-            <Button>Get Started</Button>
+            {user ? (
+              <>
+                <Button variant="outline" onClick={() => router.push('/dashboard')}>
+                  ダッシュボード
+                </Button>
+                <Button onClick={() => router.push('/add-video')}>
+                  新しい動画
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => router.push('/login')}>
+                  ログイン
+                </Button>
+                <Button onClick={() => router.push('/register')}>
+                  新規登録
+                </Button>
+              </>
+            )}
           </div>
         </nav>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,8 @@ import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { VideoUrlInput } from "@/components/video-input/VideoUrlInput";
+import { useAuth } from "@/components/providers/auth-provider";
+import { useToast } from "@/hooks/use-toast";
 import { 
   BookOpen, 
   Brain, 
@@ -119,12 +121,89 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("overview");
   const [isAddVideoOpen, setIsAddVideoOpen] = useState(false);
   const router = useRouter();
+  const { user, signOut, loading } = useAuth();
+  const { toast } = useToast();
+
+  // ダッシュボードアクセス時のログ出力とログアウト時のリダイレクト
+  useEffect(() => {
+    // ローディング中は何もしない
+    if (loading) {
+      console.log('ダッシュボード: 認証状態確認中...');
+      return;
+    }
+
+    if (user) {
+      console.log('ダッシュボードアクセス:', {
+        userId: user.id,
+        email: user.email,
+        timestamp: new Date().toISOString(),
+        userAgent: navigator.userAgent
+      });
+    } else {
+      // ユーザーがログアウトした場合はログインページにリダイレクト
+      console.log('ダッシュボード: ユーザーがログアウト - ログインページにリダイレクト');
+      router.push('/login');
+    }
+  }, [user, loading, router]);
 
   const handleAddVideo = (url: string) => {
     setIsAddVideoOpen(false);
     // 処理ページに遷移
     router.push(`/process?url=${encodeURIComponent(url)}`);
   };
+
+  const handleLogout = async () => {
+    try {
+      console.log('ログアウト開始:', {
+        userId: user?.id,
+        email: user?.email,
+        timestamp: new Date().toISOString()
+      });
+      
+      await signOut();
+      
+      console.log('ログアウト完了:', {
+        timestamp: new Date().toISOString()
+      });
+      
+      toast({
+        title: "ログアウト完了",
+        description: "ログアウトしました",
+      });
+      
+      // AuthProviderで自動的にログインページにリダイレクトされるため、ここでは何もしない
+    } catch (error) {
+      console.error('ログアウトエラー:', error);
+      toast({
+        title: "エラー",
+        description: "ログアウト中にエラーが発生しました",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // ローディング中はローディング画面を表示
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">認証状態を確認中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ユーザーがログインしていない場合は何も表示しない（useEffectでリダイレクト）
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-muted-foreground">リダイレクト中...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -146,7 +225,7 @@ export default function DashboardPage() {
               <Button variant="ghost" size="icon">
                 <Settings className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" onClick={handleLogout}>
                 <LogOut className="h-4 w-4" />
               </Button>
               <Avatar>
