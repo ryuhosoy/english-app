@@ -35,7 +35,17 @@ NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-### 4. Supabase認証の設定
+### 4. データベースのセットアップ
+
+1. Supabaseダッシュボードで「SQL Editor」に移動
+2. `database-schema.sql`ファイルの内容をコピーして実行
+3. これにより以下のテーブルが作成されます：
+   - `videos`: 動画情報
+   - `vocabulary_words`: 単語帳
+   - `study_sessions`: 学習セッション
+   - `user_progress`: ユーザー進捗
+
+### 5. Supabase認証の設定
 
 1. Supabaseダッシュボードで「Authentication」→「Settings」に移動
 2. 「Site URL」に`http://localhost:3000`を設定

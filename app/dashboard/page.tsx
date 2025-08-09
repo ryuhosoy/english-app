@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { VideoUrlInput } from "@/components/video-input/VideoUrlInput";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useToast } from "@/hooks/use-toast";
+import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { 
   BookOpen, 
   Brain, 
@@ -30,99 +32,28 @@ import {
   LogOut,
   Plus
 } from "lucide-react";
+import { SpeechPlayer } from "@/components/ui/speech-player";
 import Link from "next/link";
-
-// Mock data for demonstration
-const mockUser = {
-  name: "田中 太郎",
-  email: "tanaka@example.com",
-  avatar: "",
-  level: "Intermediate",
-  streak: 7,
-  totalStudyTime: 45,
-  completedVideos: 12,
-  savedWords: 89
-};
-
-const recentVideos = [
-  {
-    id: 1,
-    title: "English Listening Practice - Daily Conversation",
-    thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg",
-    duration: "15:30",
-    completedAt: "2024-01-15",
-    score: 85,
-    wordsLearned: 12
-  },
-  {
-    id: 2,
-    title: "Business English - Meeting Phrases",
-    thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg",
-    duration: "12:45",
-    completedAt: "2024-01-14",
-    score: 92,
-    wordsLearned: 8
-  },
-  {
-    id: 3,
-    title: "TOEIC Listening Section Tips",
-    thumbnail: "https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg",
-    duration: "20:15",
-    completedAt: "2024-01-13",
-    score: 78,
-    wordsLearned: 15
-  }
-];
-
-const savedWords = [
-  {
-    id: 1,
-    word: "comprehension",
-    meaning: "理解力",
-    partOfSpeech: "名詞",
-    difficulty: "intermediate",
-    reviewCount: 3,
-    lastReviewed: "2024-01-15",
-    mastered: false
-  },
-  {
-    id: 2,
-    word: "authentic",
-    meaning: "本物の、真正な",
-    partOfSpeech: "形容詞",
-    difficulty: "intermediate",
-    reviewCount: 5,
-    lastReviewed: "2024-01-14",
-    mastered: true
-  },
-  {
-    id: 3,
-    word: "simultaneously",
-    meaning: "同時に",
-    partOfSpeech: "副詞",
-    difficulty: "advanced",
-    reviewCount: 2,
-    lastReviewed: "2024-01-13",
-    mastered: false
-  }
-];
-
-const weeklyProgress = [
-  { day: "月", videos: 2, words: 15 },
-  { day: "火", videos: 1, words: 8 },
-  { day: "水", videos: 3, words: 22 },
-  { day: "木", videos: 2, words: 12 },
-  { day: "金", videos: 1, words: 6 },
-  { day: "土", videos: 2, words: 18 },
-  { day: "日", videos: 1, words: 9 }
-];
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState("overview");
   const [isAddVideoOpen, setIsAddVideoOpen] = useState(false);
+  const [imageLoadingStates, setImageLoadingStates] = useState<{[key: string]: boolean}>({});
   const router = useRouter();
   const { user, signOut, loading } = useAuth();
   const { toast } = useToast();
+  const { 
+    videos, 
+    vocabularyWords, 
+    studySessions, 
+    userProgress, 
+    recentVideos,
+    savedWords,
+    weeklyProgress, 
+    todayGoals, 
+    loading: dataLoading, 
+    error 
+  } = useDashboardData();
 
   // ダッシュボードアクセス時のログ出力とログアウト時のリダイレクト
   useEffect(() => {
@@ -182,13 +113,43 @@ export default function DashboardPage() {
     }
   };
 
-  // ローディング中はローディング画面を表示
+  // 認証ローディング中はローディング画面を表示
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">認証状態を確認中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // データローディング中はローディング画面を表示
+  if (dataLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">データを読み込み中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // エラーが発生した場合はエラー画面を表示
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+            <span className="text-red-600 text-2xl">⚠️</span>
+          </div>
+          <h2 className="text-xl font-semibold mb-2">データの読み込みに失敗しました</h2>
+          <p className="text-muted-foreground mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>
+            再読み込み
+          </Button>
         </div>
       </div>
     );
@@ -229,8 +190,8 @@ export default function DashboardPage() {
                 <LogOut className="h-4 w-4" />
               </Button>
               <Avatar>
-                <AvatarImage src={mockUser.avatar} />
-                <AvatarFallback>田</AvatarFallback>
+                <AvatarImage src={user?.user_metadata?.avatar_url} />
+                <AvatarFallback>{user?.email?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
               </Avatar>
             </div>
           </div>
@@ -240,7 +201,7 @@ export default function DashboardPage() {
       <div className="container mx-auto px-4 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
-          <h2 className="text-3xl font-bold mb-2">おかえりなさい、{mockUser.name}さん！</h2>
+          <h2 className="text-3xl font-bold mb-2">おかえりなさい、{user?.email?.split('@')[0] || 'ユーザー'}さん！</h2>
           <p className="text-muted-foreground">今日も英語学習を続けましょう。</p>
         </div>
 
@@ -252,7 +213,7 @@ export default function DashboardPage() {
               <Trophy className="h-4 w-4 text-orange-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{mockUser.streak}日</div>
+              <div className="text-2xl font-bold">{userProgress?.current_streak_days || 0}日</div>
               <p className="text-xs text-muted-foreground">
                 素晴らしい継続力です！
               </p>
@@ -265,7 +226,7 @@ export default function DashboardPage() {
               <Clock className="h-4 w-4 text-blue-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{mockUser.totalStudyTime}時間</div>
+              <div className="text-2xl font-bold">{userProgress?.total_study_time_hours || 0}時間</div>
               <p className="text-xs text-muted-foreground">
                 今月の学習時間
               </p>
@@ -278,9 +239,9 @@ export default function DashboardPage() {
               <Play className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{mockUser.completedVideos}本</div>
+              <div className="text-2xl font-bold">{userProgress?.total_videos_watched || 0}本</div>
               <p className="text-xs text-muted-foreground">
-                +3 今週
+                +{videos.length} 今週
               </p>
             </CardContent>
           </Card>
@@ -291,9 +252,9 @@ export default function DashboardPage() {
               <Bookmark className="h-4 w-4 text-purple-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{mockUser.savedWords}語</div>
+              <div className="text-2xl font-bold">{userProgress?.total_words_learned || 0}語</div>
               <p className="text-xs text-muted-foreground">
-                +12 今週
+                +{vocabularyWords.length} 今週
               </p>
             </CardContent>
           </Card>
@@ -319,27 +280,15 @@ export default function DashboardPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>動画学習</span>
-                      <span>1/2 完了</span>
+                  {todayGoals.map((goal, index) => (
+                    <div key={index} className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>{goal.name}</span>
+                        <span>{goal.completed}/{goal.goal} 完了</span>
+                      </div>
+                      <Progress value={goal.progress} className="h-2" />
                     </div>
-                    <Progress value={50} className="h-2" />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>単語復習</span>
-                      <span>8/10 完了</span>
-                    </div>
-                    <Progress value={80} className="h-2" />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>クイズ挑戦</span>
-                      <span>0/1 完了</span>
-                    </div>
-                    <Progress value={0} className="h-2" />
-                  </div>
+                  ))}
                 </CardContent>
               </Card>
 
@@ -449,38 +398,51 @@ export default function DashboardPage() {
                 {recentVideos.length > 0 ? (
                   <div className="space-y-4">
                     {recentVideos.map((video) => (
-                      <div key={video.id} className="flex items-center gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                        <div className="relative">
-                          <img 
-                            src={video.thumbnail} 
-                            alt={video.title}
-                            className="w-24 h-16 object-cover rounded"
-                          />
-                          <div className="absolute bottom-1 right-1 bg-black/80 text-white text-xs px-1 rounded">
-                            {video.duration}
+                      <Link key={video.id} href={`/results?id=${video.id}`}>
+                                                <div className="flex items-center gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+                          <div className="relative">
+                            {imageLoadingStates[video.id] !== false && (
+                              <Skeleton className="w-24 h-16 rounded" />
+                            )}
+                            <img 
+                              src={video.thumbnail} 
+                              alt={video.title}
+                              className={`w-24 h-16 object-cover rounded ${imageLoadingStates[video.id] === false ? 'block' : 'hidden'}`}
+                              onLoad={() => {
+                                setImageLoadingStates(prev => ({ ...prev, [video.id]: false }));
+                              }}
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOTYiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA5NiA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9Ijk2IiBoZWlnaHQ9IjY0IiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik0zMiAyNEg2NFY0MEgzMloiIGZpbGw9IiNEN0Q5RDEiLz4KPHBhdGggZD0iTTQ4IDMyTDU2IDM4TDUyIDQySDQ0TDUwIDM4TDQ4IDMyWiIgZmlsbD0iIzk5Q0FGRiIvPgo8L3N2Zz4K';
+                                setImageLoadingStates(prev => ({ ...prev, [video.id]: false }));
+                              }}
+                            />
+                            <div className="absolute bottom-1 right-1 bg-black/80 text-white text-xs px-1 rounded">
+                              {video.duration}
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-medium mb-1">{video.title}</h3>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              {video.completedAt}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Star className="h-3 w-3" />
-                              スコア: {video.score}%
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <BookOpen className="h-3 w-3" />
-                              {video.wordsLearned}語学習
-                            </span>
+                          <div className="flex-1">
+                            <h3 className="font-medium mb-1">{video.title}</h3>
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {video.completedAt}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Star className="h-3 w-3" />
+                                スコア: {video.score}%
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <BookOpen className="h-3 w-3" />
+                                {video.wordsLearned}語学習
+                              </span>
+                            </div>
                           </div>
+                          <Button variant="ghost" size="icon">
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
                         </div>
-                        <Button variant="ghost" size="icon">
-                          <ChevronRight className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      </Link>
                     ))}
                   </div>
                 ) : (
@@ -527,41 +489,63 @@ export default function DashboardPage() {
             </div>
 
             <div className="grid gap-4">
-              {savedWords.map((word) => (
-                <Card key={word.id} className={`transition-all hover:shadow-md ${
-                  !word.mastered ? 'border-orange-200 bg-orange-50/50 dark:border-orange-800 dark:bg-orange-950/20' : ''
-                }`}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-bold text-lg">{word.word}</h4>
+              {savedWords.length > 0 ? (
+                savedWords.map((word) => (
+                  <Card key={word.id} className={`transition-all hover:shadow-md ${
+                    !word.mastered ? 'border-orange-200 bg-orange-50/50 dark:border-orange-800 dark:bg-orange-950/20' : ''
+                  }`}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-lg">{word.word}</h4>
+                          <Badge variant="outline" className="text-xs">
+                            {word.partOfSpeech}
+                          </Badge>
+                          <Badge variant={word.mastered ? "default" : "secondary"} className="text-xs">
+                            {word.mastered ? "習得済み" : "学習中"}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <SpeechPlayer 
+                            text={word.word}
+                            language="en-US"
+                            size="sm"
+                            showControls={false}
+                            className="h-8"
+                          />
+                          <Button size="icon" variant="ghost" className="h-8 w-8">
+                            <Bookmark className="h-4 w-4 fill-current text-yellow-500" />
+                          </Button>
+                        </div>
+                      </div>
+                      <p className="text-muted-foreground mb-2">{word.meaning}</p>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span>復習回数: {word.reviewCount}</span>
+                        <span>最終復習: {word.lastReviewed}</span>
                         <Badge variant="outline" className="text-xs">
-                          {word.partOfSpeech}
-                        </Badge>
-                        <Badge variant={word.mastered ? "default" : "secondary"} className="text-xs">
-                          {word.mastered ? "習得済み" : "学習中"}
+                          {word.difficulty}
                         </Badge>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Button size="icon" variant="ghost" className="h-8 w-8">
-                          <Volume2 className="h-4 w-4" />
-                        </Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8">
-                          <Bookmark className="h-4 w-4 fill-current text-yellow-500" />
-                        </Button>
-                      </div>
-                    </div>
-                    <p className="text-muted-foreground mb-2">{word.meaning}</p>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <span>復習回数: {word.reviewCount}</span>
-                      <span>最終復習: {word.lastReviewed}</span>
-                      <Badge variant="outline" className="text-xs">
-                        {word.difficulty}
-                      </Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <div className="text-center py-12">
+                  <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                    <BookOpen className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-lg font-medium mb-2">まだ保存された単語がありません</h3>
+                  <p className="text-muted-foreground mb-6">
+                    動画を学習して単語を保存しましょう
+                  </p>
+                  <Link href="/add-video">
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      動画を追加
+                    </Button>
+                  </Link>
+                </div>
+              )}
             </div>
           </TabsContent>
 
@@ -575,17 +559,17 @@ export default function DashboardPage() {
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
                       <span className="font-medium">現在のレベル</span>
-                      <Badge variant="secondary">{mockUser.level}</Badge>
+                      <Badge variant="secondary">{userProgress?.level || 'beginner'}</Badge>
                     </div>
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span>次のレベルまで</span>
-                        <span>750/1000 XP</span>
+                        <span>{userProgress?.experience_points || 0}/1000 XP</span>
                       </div>
-                      <Progress value={75} className="h-3" />
+                      <Progress value={Math.min(((userProgress?.experience_points || 0) / 1000) * 100, 100)} className="h-3" />
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      あと250 XPで上級レベルに到達します！
+                      あと{Math.max(1000 - (userProgress?.experience_points || 0), 0)} XPで上級レベルに到達します！
                     </div>
                   </div>
                 </CardContent>
@@ -599,19 +583,23 @@ export default function DashboardPage() {
                   <div className="space-y-4">
                     <div className="flex justify-between">
                       <span className="text-sm">平均スコア</span>
-                      <span className="font-medium">85%</span>
+                      <span className="font-medium">
+                        {studySessions.length > 0 
+                          ? Math.round(studySessions.reduce((sum, session) => sum + (session.score || 0), 0) / studySessions.length)
+                          : 0}%
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm">習得単語数</span>
-                      <span className="font-medium">234語</span>
+                      <span className="font-medium">{userProgress?.total_words_learned || 0}語</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm">最長連続日数</span>
-                      <span className="font-medium">15日</span>
+                      <span className="font-medium">{userProgress?.longest_streak_days || 0}日</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm">総学習時間</span>
-                      <span className="font-medium">127時間</span>
+                      <span className="font-medium">{userProgress?.total_study_time_hours || 0}時間</span>
                     </div>
                   </div>
                 </CardContent>
@@ -627,23 +615,23 @@ export default function DashboardPage() {
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span>動画学習 (20本)</span>
-                      <span>12/20 完了</span>
+                      <span>{userProgress?.total_videos_watched || 0}/20 完了</span>
                     </div>
-                    <Progress value={60} className="h-2" />
+                    <Progress value={Math.min(((userProgress?.total_videos_watched || 0) / 20) * 100, 100)} className="h-2" />
                   </div>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span>新規単語習得 (100語)</span>
-                      <span>67/100 完了</span>
+                      <span>{userProgress?.total_words_learned || 0}/100 完了</span>
                     </div>
-                    <Progress value={67} className="h-2" />
+                    <Progress value={Math.min(((userProgress?.total_words_learned || 0) / 100) * 100, 100)} className="h-2" />
                   </div>
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span>学習時間 (30時間)</span>
-                      <span>22/30 完了</span>
+                      <span>{Math.round(userProgress?.total_study_time_hours || 0)}/30 完了</span>
                     </div>
-                    <Progress value={73} className="h-2" />
+                    <Progress value={Math.min(((userProgress?.total_study_time_hours || 0) / 30) * 100, 100)} className="h-2" />
                   </div>
                 </div>
               </CardContent>

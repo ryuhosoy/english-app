@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Brain, BookOpen, Volume2 } from "lucide-react";
+import { SpeechPlayer } from "@/components/ui/speech-player";
 
 interface VocabularyViewProps {
   keywords: {
@@ -58,10 +59,13 @@ export function VocabularyView({ keywords }: VocabularyViewProps) {
                       <p className="text-sm italic">"{word.example}"</p>
                     </div>
                     <div className="flex gap-2">
-                      <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary">
-                        <Volume2 className="h-3 w-3" />
-                        発音を聞く
-                      </button>
+                      <SpeechPlayer 
+                        text={word.word}
+                        language="en-US"
+                        size="sm"
+                        showControls={false}
+                        className="text-xs text-muted-foreground hover:text-primary"
+                      />
                       <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary">
                         <BookOpen className="h-3 w-3" />
                         詳細を見る
@@ -108,10 +112,13 @@ export function VocabularyView({ keywords }: VocabularyViewProps) {
                       <p className="text-sm italic">"{phrase.example}"</p>
                     </div>
                     <div className="flex gap-2">
-                      <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary">
-                        <Volume2 className="h-3 w-3" />
-                        発音を聞く
-                      </button>
+                      <SpeechPlayer 
+                        text={phrase.phrase}
+                        language="en-US"
+                        size="sm"
+                        showControls={false}
+                        className="text-xs text-muted-foreground hover:text-primary"
+                      />
                       <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary">
                         <BookOpen className="h-3 w-3" />
                         詳細を見る

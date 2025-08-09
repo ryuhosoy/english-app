@@ -6,6 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
+import { useAuth } from "@/components/providers/auth-provider";
+import { useToast } from "@/hooks/use-toast";
+import { 
+  recordStudySession, 
+  saveVocabularyWord, 
+  updateVideoCompletion,
+  updateUserProgress,
+  getOrCreateVideoId
+} from "@/lib/dashboard-utils";
 import { 
   ArrowLeft, 
   Play, 
@@ -22,6 +31,7 @@ import {
   Maximize
 } from "lucide-react";
 import { extractVideoId } from "@/lib/utils";
+import { SpeechPlayer } from "@/components/ui/speech-player";
 
 type ProcessingResults = {
   transcription: string;
@@ -46,6 +56,7 @@ type ProcessingResults = {
     }>;
   };
   videoUrl: string;
+  videoTitle?: string; // 動画タイトルを追加
   srt?: string; // 追加
 };
 
@@ -71,7 +82,10 @@ declare global {
 export default function LearnPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const videoId = searchParams.get("videoId") || "";
+  const videoUrl = searchParams.get("url") || "";
   const [results, setResults] = useState<ProcessingResults | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
@@ -88,6 +102,7 @@ export default function LearnPage() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [subtitles, setSubtitles] = useState<SubtitleSegment[]>([]);
+  const [isFinishing, setIsFinishing] = useState(false);
 
   const playerRef = useRef<HTMLDivElement>(null);
   const playerInstanceRef = useRef<any>(null);
@@ -347,6 +362,148 @@ export default function LearnPage() {
     return Math.round((correct / results.quiz.quizzes.length) * 100);
   };
 
+  // 学習終了時の処理
+  const handleFinishLearning = async () => {
+    if (!user || !results) return;
+
+    setIsFinishing(true);
+    
+    try {
+      console.log('学習終了処理開始:', {
+        userId: user.id,
+        videoId,
+        videoUrl,
+        registeredWordsCount: registeredWords.length,
+        quizScore: getQuizScore(),
+        timestamp: new Date().toISOString()
+      });
+
+      
+      try {
+        console.log('1. 動画ID取得/作成処理を開始');
+        // 1. 学習セッションを記録
+        const sessionDuration = Math.floor(duration / 60); // 分単位
+        
+        // 動画タイトルとURLを決定（resultsから取得、なければデフォルト値を使用）
+        const videoTitle = results.videoTitle || `YouTube Video ${videoId}`;
+        const constructedVideoUrl = results.videoUrl || `https://www.youtube.com/watch?v=${videoId}`;
+        console.log('動画タイトル:', videoTitle);
+        console.log('使用する動画URL:', constructedVideoUrl);
+        
+        const videoIdFromDb = await getOrCreateVideoId(user.id, videoId, constructedVideoUrl, videoTitle);
+        console.log('動画ID取得/作成完了:', videoIdFromDb);
+
+        console.log('2. 学習セッション記録処理を開始');
+        await recordStudySession(
+          user.id,
+          videoIdFromDb,
+          'video_watch',
+          sessionDuration,
+          getQuizScore(),
+          registeredWords.length
+        );
+        console.log('学習セッション記録完了');
+
+        console.log('3. 単語保存処理を開始');
+        // 2. 登録した単語をデータベースに保存
+        for (const word of registeredWords) {
+          try {
+            await saveVocabularyWord(
+              user.id,
+              videoIdFromDb,
+              word.word,
+              `学習中に登録された単語 (${Math.floor(word.timestamp)}秒)`,
+              'noun', // デフォルト
+              'beginner'
+            );
+          } catch (error) {
+            console.error('単語保存エラー:', error);
+            // 個別の単語エラーは無視して続行
+          }
+        }
+        console.log('単語保存処理完了');
+
+        console.log('4. 動画完了状態更新処理を開始');
+        // 3. 動画の完了状態を更新
+        await updateVideoCompletion(
+          videoIdFromDb,
+          true,
+          getQuizScore(),
+          registeredWords.length
+        );
+        console.log('動画完了状態更新完了');
+
+        console.log('5. ユーザー進捗更新処理を開始');
+        // 4. ユーザー進捗を更新
+        const currentProgress = {
+          total_videos_watched: 1, // 増分
+          total_words_learned: registeredWords.length,
+          total_study_time_hours: sessionDuration / 60, // 時間単位
+          experience_points: Math.floor(getQuizScore() / 10) + registeredWords.length * 5, // スコアと単語数に基づくXP
+          last_study_date: new Date().toISOString().split('T')[0]
+        };
+
+        await updateUserProgress(user.id, currentProgress);
+        console.log('ユーザー進捗更新完了');
+
+        console.log('データベース処理完了');
+
+      } catch (dbError) {
+        console.error('データベース処理エラー:', dbError);
+        console.log('データベース処理をスキップして簡易版処理を実行');
+      }
+
+      console.log('6. localStorageクリア処理を開始');
+      // 5. localStorageをクリア
+      localStorage.removeItem('processingResults');
+      localStorage.removeItem('registeredWords');
+      console.log('localStorageクリア完了');
+
+      console.log('学習終了処理完了');
+
+      toast({
+        title: "学習完了",
+        description: `学習が完了しました。スコア: ${getQuizScore()}%, 習得単語: ${registeredWords.length}語`,
+      });
+
+      // ダッシュボードにリダイレクト
+      router.push('/dashboard');
+
+    } catch (error) {
+      console.error('学習終了処理エラー:', error);
+      
+      // エラーが発生しても最低限の処理を完了
+      try {
+        console.log('エラー後のフォールバック処理開始');
+        
+        // localStorageをクリア
+        localStorage.removeItem('processingResults');
+        localStorage.removeItem('registeredWords');
+        console.log('フォールバック処理完了');
+        
+        toast({
+          title: "学習完了（一部エラー）",
+          description: "学習は完了しましたが、一部のデータ保存でエラーが発生しました。",
+          variant: "destructive",
+        });
+        
+        // ダッシュボードにリダイレクト
+        router.push('/dashboard');
+        
+      } catch (fallbackError) {
+        console.error('フォールバック処理エラー:', fallbackError);
+        
+        toast({
+          title: "エラー",
+          description: "学習データの保存中にエラーが発生しました。",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setIsFinishing(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -557,11 +714,17 @@ export default function LearnPage() {
                         key={index}
                         className="flex items-center justify-between p-2 bg-muted rounded"
                       >
-                        <div>
+                        <div className="flex items-center gap-2">
                           <span className="font-medium">{word.word}</span>
-                          <span className="text-sm text-muted-foreground ml-2">
+                          <span className="text-sm text-muted-foreground">
                             {Math.floor(word.timestamp)}秒
                           </span>
+                          <SpeechPlayer 
+                            text={word.word}
+                            language="en-US"
+                            size="sm"
+                            showControls={false}
+                          />
                         </div>
                         <Button
                           variant="ghost"
@@ -659,8 +822,18 @@ export default function LearnPage() {
                     <Button variant="outline" onClick={() => setShowQuiz(true)}>
                       クイズを再挑戦
                     </Button>
-                    <Button onClick={() => router.push('/dashboard')}>
-                      学習を終了
+                    <Button 
+                      onClick={handleFinishLearning}
+                      disabled={isFinishing}
+                    >
+                      {isFinishing ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          保存中...
+                        </>
+                      ) : (
+                        "学習を終了"
+                      )}
                     </Button>
                   </div>
                 </div>

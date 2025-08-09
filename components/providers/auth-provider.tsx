@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import { initializeUserProgress } from '@/lib/dashboard-utils';
 
 interface AuthContextType {
   user: User | null;
@@ -73,13 +74,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           timestamp: new Date().toISOString()
         });
 
-        // ログイン成功時のログ出力のみ（リダイレクトは各ページで処理）
+        // ログイン成功時の処理
         if (event === 'SIGNED_IN' && session?.user) {
           console.log('ログイン成功:', {
             userId: session.user.id,
             email: session.user.email,
             timestamp: new Date().toISOString()
           });
+
+          // ユーザー進捗データの初期化を試行
+          try {
+            await initializeUserProgress(session.user.id);
+            console.log('ユーザー進捗初期化完了');
+          } catch (error) {
+            // 既に存在する場合はエラーを無視
+            console.log('ユーザー進捗は既に存在します');
+          }
         }
 
         // ログアウト時のログ出力のみ（リダイレクトは各ページで処理）
