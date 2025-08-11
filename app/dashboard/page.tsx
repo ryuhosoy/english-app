@@ -183,9 +183,6 @@ export default function DashboardPage() {
                   新しい動画
                 </Button>
               </Link>
-              <Button variant="ghost" size="icon">
-                <Settings className="h-4 w-4" />
-              </Button>
               <Button variant="ghost" size="icon" onClick={handleLogout}>
                 <LogOut className="h-4 w-4" />
               </Button>
@@ -337,40 +334,7 @@ export default function DashboardPage() {
               </Card>
             </div>
 
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle>クイックアクション</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Dialog open={isAddVideoOpen} onOpenChange={setIsAddVideoOpen}>
-                    <DialogTrigger asChild>
-                      <Button className="h-20 flex flex-col gap-2">
-                        <Plus className="h-6 w-6" />
-                        新しい動画を追加
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-md">
-                      <DialogHeader>
-                        <DialogTitle>新しい動画を追加</DialogTitle>
-                      </DialogHeader>
-                      <div className="py-4">
-                        <VideoUrlInput onSubmit={handleAddVideo} />
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                  <Button variant="outline" className="h-20 flex flex-col gap-2">
-                    <RotateCw className="h-6 w-6" />
-                    単語復習
-                  </Button>
-                  <Button variant="outline" className="h-20 flex flex-col gap-2">
-                    <Brain className="h-6 w-6" />
-                    理解度テスト
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+
           </TabsContent>
 
           <TabsContent value="recent" className="space-y-6">
@@ -397,9 +361,19 @@ export default function DashboardPage() {
               <CardContent>
                 {recentVideos.length > 0 ? (
                   <div className="space-y-4">
-                    {recentVideos.map((video) => (
-                      <Link key={video.id} href={`/results?id=${video.id}`}>
-                                                <div className="flex items-center gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
+                    {recentVideos.map((video) => {
+                      // 対応する動画データを取得
+                      const videoData = videos.find(v => v.id === video.id);
+                      return (
+                        <div 
+                          key={video.id} 
+                          className="flex items-center gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                          onClick={() => {
+                            if (videoData?.youtube_url) {
+                              window.open(videoData.youtube_url, '_blank');
+                            }
+                          }}
+                        >
                           <div className="relative">
                             {imageLoadingStates[video.id] !== false && (
                               <Skeleton className="w-24 h-16 rounded" />
@@ -442,8 +416,8 @@ export default function DashboardPage() {
                             <ChevronRight className="h-4 w-4" />
                           </Button>
                         </div>
-                      </Link>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="text-center py-12">
