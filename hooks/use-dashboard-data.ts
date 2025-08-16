@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/components/providers/auth-provider';
 import { getYouTubeThumbnailUrl } from '@/lib/utils';
+import { calculateStreakDays } from '@/lib/dashboard-utils';
 
 export interface Video {
   id: string;
@@ -162,6 +163,35 @@ export function useDashboardData() {
         setStudySessions(sessionsResult.data || []);
         setUserProgress(progressResult.data);
 
+        // 連続学習日数を再計算（必要に応じて）
+        if (sessionsResult.data && sessionsResult.data.length > 0) {
+          try {
+            const { current: currentStreak, longest: longestStreak } = await calculateStreakDays(user.id);
+            if (progressResult.data) {
+              // 進捗データが存在する場合は連続日数を更新
+              if (currentStreak !== progressResult.data.current_streak_days || 
+                  longestStreak !== progressResult.data.longest_streak_days) {
+                await supabase
+                  .from('user_progress')
+                  .update({
+                    current_streak_days: currentStreak,
+                    longest_streak_days: longestStreak
+                  })
+                  .eq('user_id', user.id);
+                
+                // ローカル状態も更新
+                setUserProgress(prev => prev ? {
+                  ...prev,
+                  current_streak_days: currentStreak,
+                  longest_streak_days: longestStreak
+                } : null);
+              }
+            }
+          } catch (streakError) {
+            console.warn('連続学習日数計算エラー（無視）:', streakError);
+          }
+        }
+
         console.log('ダッシュボードデータ取得完了:', {
           videosCount: videosResult.data?.length || 0,
           vocabularyCount: vocabularyResult.data?.length || 0,
@@ -190,22 +220,27 @@ export function useDashboardData() {
       return sessionDate >= weekAgo && sessionDate <= today;
     });
 
-    const days = ['日', '月', '火', '水', '木', '金', '土'];
-    const progress = days.map((day, index) => {
+    // 過去7日間の日付と曜日を正しく計算
+    const progress = [];
+    for (let i = 6; i >= 0; i--) {
       const targetDate = new Date(today);
-      targetDate.setDate(today.getDate() - (6 - index));
+      targetDate.setDate(today.getDate() - i);
       
       const daySessions = weeklySessions.filter(session => {
         const sessionDate = new Date(session.session_date);
         return sessionDate.toDateString() === targetDate.toDateString();
       });
 
-      return {
-        day,
+      // 曜日を日本語で取得
+      const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+      const dayName = dayNames[targetDate.getDay()];
+
+      progress.push({
+        day: dayName,
         videos: daySessions.filter(s => s.session_type === 'video_watch').length,
         words: daySessions.reduce((sum, s) => sum + s.words_learned_count, 0)
-      };
-    });
+      });
+    }
 
     return progress;
   };

@@ -150,6 +150,18 @@ export async function recordStudySession(
       throw error;
     }
 
+    // 連続学習日数を計算して更新
+    try {
+      const { current: currentStreak, longest: longestStreak } = await calculateStreakDays(userId);
+      await updateUserProgress(userId, {
+        current_streak_days: currentStreak,
+        longest_streak_days: longestStreak,
+        last_study_date: new Date().toISOString().split('T')[0]
+      });
+    } catch (streakError) {
+      console.warn('連続学習日数更新エラー（無視）:', streakError);
+    }
+
     console.log('学習セッション記録完了:', data);
     return data;
   } catch (error) {
@@ -322,6 +334,78 @@ export async function updateVocabularyWordMastery(
   } catch (error) {
     console.error('単語習得状態更新エラー:', error);
     throw error;
+  }
+}
+
+// 連続学習日数を計算する関数
+export async function calculateStreakDays(userId: string): Promise<{ current: number; longest: number }> {
+  try {
+    // 過去30日間の学習セッションを取得
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const { data: sessions, error } = await supabase
+      .from('study_sessions')
+      .select('session_date')
+      .eq('user_id', userId)
+      .gte('session_date', thirtyDaysAgo.toISOString().split('T')[0])
+      .order('session_date', { ascending: false });
+
+    if (error) {
+      console.error('学習セッション取得エラー:', error);
+      throw error;
+    }
+
+    // 重複する日付を除去してユニークな学習日を取得
+    const uniqueStudyDates = Array.from(new Set(sessions?.map(s => s.session_date) || [])).sort().reverse();
+    
+    if (uniqueStudyDates.length === 0) {
+      return { current: 0, longest: 0 };
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    let currentStreak = 0;
+    let longestStreak = 0;
+    let tempStreak = 0;
+
+    // 今日から過去に向かって連続日数を計算
+    let currentDate = new Date(today);
+    
+    for (let i = 0; i < 30; i++) {
+      const dateStr = currentDate.toISOString().split('T')[0];
+      
+      if (uniqueStudyDates.includes(dateStr)) {
+        tempStreak++;
+        if (i === 0) { // 今日の場合
+          currentStreak = tempStreak;
+        }
+      } else {
+        // 連続が途切れた場合、最長記録を更新
+        if (tempStreak > longestStreak) {
+          longestStreak = tempStreak;
+        }
+        tempStreak = 0;
+      }
+      
+      // 1日前に移動
+      currentDate.setDate(currentDate.getDate() - 1);
+    }
+
+    // 最後の連続期間もチェック
+    if (tempStreak > longestStreak) {
+      longestStreak = tempStreak;
+    }
+
+    // 現在の連続日数が最長記録を超えている場合
+    if (currentStreak > longestStreak) {
+      longestStreak = currentStreak;
+    }
+
+    console.log('連続学習日数計算完了:', { current: currentStreak, longest: longestStreak });
+    return { current: currentStreak, longest: longestStreak };
+  } catch (error) {
+    console.error('連続学習日数計算エラー:', error);
+    return { current: 0, longest: 0 };
   }
 }
 
