@@ -28,17 +28,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // 初期セッションを取得
     const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-      
-      if (session?.user) {
-        console.log('初期セッション検出:', {
-          userId: session.user.id,
-          email: session.user.email,
-          timestamp: new Date().toISOString()
-        });
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+        
+        if (session?.user) {
+          console.log('初期セッション検出:', {
+            userId: session.user.id,
+            email: session.user.email,
+            timestamp: new Date().toISOString()
+          });
+        }
+      } catch (error) {
+        console.error('セッション取得エラー:', error);
+        setLoading(false);
       }
     };
 
@@ -47,56 +52,61 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // 認証状態の変更を監視
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('認証状態変更詳細:', {
-          event,
-          hasSession: !!session,
-          hasUser: !!session?.user,
-          userId: session?.user?.id,
-          email: session?.user?.email,
-          accessToken: !!session?.access_token,
-          refreshToken: !!session?.refresh_token,
-          timestamp: new Date().toISOString()
-        });
-        
-        console.log('AuthProvider: 状態更新前:', {
-          currentUser: user?.id,
-          currentSession: !!session,
-          timestamp: new Date().toISOString()
-        });
-        
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-        
-        console.log('AuthProvider: 状態更新後:', {
-          newUser: session?.user?.id,
-          newSession: !!session,
-          timestamp: new Date().toISOString()
-        });
-
-        // ログイン成功時の処理
-        if (event === 'SIGNED_IN' && session?.user) {
-          console.log('ログイン成功:', {
-            userId: session.user.id,
-            email: session.user.email,
+        try {
+          console.log('認証状態変更詳細:', {
+            event,
+            hasSession: !!session,
+            hasUser: !!session?.user,
+            userId: session?.user?.id,
+            email: session?.user?.email,
+            accessToken: !!session?.access_token,
+            refreshToken: !!session?.refresh_token,
+            timestamp: new Date().toISOString()
+          });
+          
+          console.log('AuthProvider: 状態更新前:', {
+            currentUser: user?.id,
+            currentSession: !!session,
+            timestamp: new Date().toISOString()
+          });
+          
+          setSession(session);
+          setUser(session?.user ?? null);
+          setLoading(false);
+          
+          console.log('AuthProvider: 状態更新後:', {
+            newUser: session?.user?.id,
+            newSession: !!session,
             timestamp: new Date().toISOString()
           });
 
-          // ユーザー進捗データの初期化を試行
-          try {
-            await initializeUserProgress(session.user.id);
-            console.log('ユーザー進捗初期化完了');
-          } catch (error) {
-            // 既に存在する場合はエラーを無視
-            console.log('ユーザー進捗は既に存在します');
+          // ログイン成功時の処理
+          if (event === 'SIGNED_IN' && session?.user) {
+            console.log('ログイン成功:', {
+              userId: session.user.id,
+              email: session.user.email,
+              timestamp: new Date().toISOString()
+            });
+
+            // ユーザー進捗データの初期化を試行
+            try {
+              await initializeUserProgress(session.user.id);
+              console.log('ユーザー進捗初期化完了');
+            } catch (error) {
+              // 既に存在する場合はエラーを無視
+              console.log('ユーザー進捗は既に存在します');
+            }
           }
-        }
 
-        // ログアウト時のログ出力のみ（リダイレクトは各ページで処理）
-        if (event === 'SIGNED_OUT') {
-          console.log('ログアウト完了:', {
-            timestamp: new Date().toISOString()
-          });
+          // ログアウト時のログ出力のみ（リダイレクトは各ページで処理）
+          if (event === 'SIGNED_OUT') {
+            console.log('ログアウト完了:', {
+              timestamp: new Date().toISOString()
+            });
+          }
+        } catch (error) {
+          console.error('認証状態変更処理エラー:', error);
+          setLoading(false);
         }
       }
     );
