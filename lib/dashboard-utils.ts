@@ -263,7 +263,7 @@ export async function updateUserProgress(
   }
 }
 
-// 単語を保存する関数
+// 単語を保存する関数（重複チェック付き）
 export async function saveVocabularyWord(
   userId: string,
   videoId: string,
@@ -273,6 +273,42 @@ export async function saveVocabularyWord(
   difficultyLevel: 'beginner' | 'intermediate' | 'advanced' = 'beginner'
 ) {
   try {
+    // 既に同じ単語が保存されているかチェック
+    const { data: existingWord, error: checkError } = await supabase
+      .from('vocabulary_words')
+      .select('id, part_of_speech')
+      .eq('user_id', userId)
+      .eq('video_id', videoId)
+      .eq('word', word)
+      .single();
+
+    if (checkError && checkError.code !== 'PGRST116') {
+      // PGRST116は「データが見つからない」エラーなので、新規保存を続行
+      console.error('単語重複チェックエラー:', checkError);
+    }
+
+    if (existingWord) {
+      console.log('単語が既に存在します:', { word, existingPartOfSpeech: existingWord.part_of_speech });
+      // 既に存在する場合は品詞情報のみ更新（品詞情報がない場合）
+      if (!existingWord.part_of_speech && partOfSpeech) {
+        const { data: updatedWord, error: updateError } = await supabase
+          .from('vocabulary_words')
+          .update({ part_of_speech: partOfSpeech })
+          .eq('id', existingWord.id)
+          .select()
+          .single();
+
+        if (updateError) {
+          console.error('品詞情報更新エラー:', updateError);
+        } else {
+          console.log('品詞情報更新完了:', updatedWord);
+          return updatedWord;
+        }
+      }
+      return existingWord;
+    }
+
+    // 新規単語を保存
     const { data, error } = await supabase
       .from('vocabulary_words')
       .insert({

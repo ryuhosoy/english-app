@@ -173,6 +173,25 @@ npm run build -- --no-cache
 2. コンソールタブでログを確認
 3. ネットワークタブでAPIリクエストを確認
 
+### 品詞情報の更新
+
+既存のデータベースの品詞情報を更新するには：
+
+```bash
+# 必要な依存関係をインストール
+pip install openai supabase python-dotenv
+
+# 環境変数を設定
+export OPENAI_API_KEY="your_openai_api_key"
+export NEXT_PUBLIC_SUPABASE_URL="your_supabase_url"
+export NEXT_PUBLIC_SUPABASE_ANON_KEY="your_supabase_anon_key"
+
+# 品詞情報を更新
+python update_part_of_speech.py
+```
+
+このスクリプトは、品詞情報が設定されていない既存の単語に対して、OpenAI APIを使用して品詞を自動判定し、データベースを更新します。
+
 ## ライセンス
 
 MIT License 

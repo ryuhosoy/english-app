@@ -39,6 +39,7 @@ type ProcessingResults = {
     important_words: Array<{
       word: string;
       meaning: string;
+      part_of_speech?: string;
       example: string;
     }>;
     important_phrases: Array<{
@@ -70,6 +71,7 @@ type RegisteredWord = {
   word: string;
   timestamp: number;
   context: string;
+  partOfSpeech?: string;
 };
 
 declare global {
@@ -405,22 +407,49 @@ export default function LearnPage() {
         console.log('学習セッション記録完了');
 
         console.log('3. 単語保存処理を開始');
-        // 2. 登録した単語をデータベースに保存
+        
+        // AIが抽出した重要単語を保存（品詞情報付き）
+        if (results.keywords.important_words) {
+          console.log('AI抽出単語の保存開始:', results.keywords.important_words.length);
+          for (const word of results.keywords.important_words) {
+            try {
+              await saveVocabularyWord(
+                user.id,
+                videoIdFromDb,
+                word.word,
+                word.meaning,
+                word.part_of_speech || 'noun',
+                'beginner'
+              );
+            } catch (error) {
+              console.error('AI抽出単語保存エラー:', error);
+              // 個別の単語エラーは無視して続行
+            }
+          }
+          console.log('AI抽出単語の保存完了');
+        }
+        
+        // 学習中に手動で登録された単語を保存
+        console.log('手動登録単語の保存開始:', registeredWords.length);
         for (const word of registeredWords) {
           try {
+            // 品詞情報を取得（デフォルトは'noun'）
+            const partOfSpeech = word.partOfSpeech || 'noun';
+            
             await saveVocabularyWord(
               user.id,
               videoIdFromDb,
               word.word,
               `学習中に登録された単語 (${Math.floor(word.timestamp)}秒)`,
-              'noun', // デフォルト
+              partOfSpeech,
               'beginner'
             );
           } catch (error) {
-            console.error('単語保存エラー:', error);
+            console.error('手動登録単語保存エラー:', error);
             // 個別の単語エラーは無視して続行
           }
         }
+        console.log('手動登録単語の保存完了');
         console.log('単語保存処理完了');
 
         console.log('4. 動画完了状態更新処理を開始');

@@ -11,6 +11,7 @@ interface VocabularyViewProps {
     important_words: Array<{
       word: string;
       meaning: string;
+      part_of_speech?: string;
       example: string;
     }>;
     important_phrases: Array<{
@@ -43,6 +44,11 @@ export function VocabularyView({ keywords }: VocabularyViewProps) {
                     <Badge variant="outline" className="font-mono">
                       {word.word}
                     </Badge>
+                    {word.part_of_speech && (
+                      <Badge variant="secondary" className="text-xs">
+                        {word.part_of_speech}
+                      </Badge>
+                    )}
                     <span className="text-sm text-muted-foreground">
                       {word.meaning}
                     </span>
@@ -50,6 +56,14 @@ export function VocabularyView({ keywords }: VocabularyViewProps) {
                 </AccordionTrigger>
                 <AccordionContent>
                   <div className="space-y-3 p-4 bg-muted/30 rounded-lg">
+                    {word.part_of_speech && (
+                      <div>
+                        <h4 className="font-semibold text-sm mb-1">品詞</h4>
+                        <Badge variant="outline" className="text-xs">
+                          {word.part_of_speech}
+                        </Badge>
+                      </div>
+                    )}
                     <div>
                       <h4 className="font-semibold text-sm mb-1">意味</h4>
                       <p className="text-sm">{word.meaning}</p>

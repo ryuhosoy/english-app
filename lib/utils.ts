@@ -75,3 +75,19 @@ export function formatDuration(seconds: number): string {
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
   }
 }
+
+// 品詞を日本語に変換する関数
+export function getPartOfSpeechLabel(partOfSpeech: string): string {
+  const labels: { [key: string]: string } = {
+    'noun': '名詞',
+    'verb': '動詞',
+    'adjective': '形容詞',
+    'adverb': '副詞',
+    'pronoun': '代名詞',
+    'preposition': '前置詞',
+    'conjunction': '接続詞',
+    'interjection': '間投詞'
+  };
+  
+  return labels[partOfSpeech] || partOfSpeech;
+}

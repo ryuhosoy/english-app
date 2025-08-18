@@ -14,6 +14,7 @@ import { VideoUrlInput } from "@/components/video-input/VideoUrlInput";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useToast } from "@/hooks/use-toast";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
+import { getPartOfSpeechLabel } from "@/lib/utils";
 import { 
   BookOpen, 
   Brain, 
@@ -456,10 +457,6 @@ export default function DashboardPage() {
                 <h3 className="text-lg font-semibold">保存した単語</h3>
                 <p className="text-sm text-muted-foreground">復習が必要な単語を優先的に表示</p>
               </div>
-              <Button>
-                <RotateCw className="h-4 w-4 mr-2" />
-                復習開始
-              </Button>
             </div>
 
             <div className="grid gap-4">
@@ -473,11 +470,11 @@ export default function DashboardPage() {
                         <div className="flex items-center gap-2">
                           <h4 className="font-bold text-lg">{word.word}</h4>
                           <Badge variant="outline" className="text-xs">
-                            {word.partOfSpeech}
+                            {getPartOfSpeechLabel(word.partOfSpeech)}
                           </Badge>
-                          <Badge variant={word.mastered ? "default" : "secondary"} className="text-xs">
+                          {/* <Badge variant={word.mastered ? "default" : "secondary"} className="text-xs">
                             {word.mastered ? "習得済み" : "学習中"}
-                          </Badge>
+                          </Badge> */}
                         </div>
                         <div className="flex items-center gap-1">
                           <SpeechPlayer 
@@ -487,19 +484,19 @@ export default function DashboardPage() {
                             showControls={false}
                             className="h-8"
                           />
-                          <Button size="icon" variant="ghost" className="h-8 w-8">
+                          {/* <Button size="icon" variant="ghost" className="h-8 w-8">
                             <Bookmark className="h-4 w-4 fill-current text-yellow-500" />
-                          </Button>
+                          </Button> */}
                         </div>
                       </div>
                       <p className="text-muted-foreground mb-2">{word.meaning}</p>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      {/* <div className="flex items-center gap-4 text-xs text-muted-foreground">
                         <span>復習回数: {word.reviewCount}</span>
                         <span>最終復習: {word.lastReviewed}</span>
                         <Badge variant="outline" className="text-xs">
                           {word.difficulty}
                         </Badge>
-                      </div>
+                      </div> */}
                     </CardContent>
                   </Card>
                 ))

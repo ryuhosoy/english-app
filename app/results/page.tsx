@@ -29,6 +29,7 @@ type ProcessingResults = {
     important_words: Array<{
       word: string;
       meaning: string;
+      part_of_speech?: string;
       example: string;
     }>;
     important_phrases: Array<{

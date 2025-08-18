@@ -29,10 +29,11 @@ export async function POST(req: NextRequest) {
 
   const prompt = `
 以下の英語のテキストから、重要な単語とフレーズを抽出してください。
+単語には品詞情報も含めてください。
 以下の形式でJSONを返してください：
 {
   "important_words": [
-    {"word": "単語", "meaning": "日本語の意味", "example": "例文"},
+    {"word": "単語", "meaning": "日本語の意味", "part_of_speech": "品詞", "example": "例文"},
     ...
   ],
   "important_phrases": [
@@ -40,6 +41,16 @@ export async function POST(req: NextRequest) {
     ...
   ]
 }
+
+品詞は以下のいずれかを使用してください：
+- noun (名詞)
+- verb (動詞)
+- adjective (形容詞)
+- adverb (副詞)
+- pronoun (代名詞)
+- preposition (前置詞)
+- conjunction (接続詞)
+- interjection (間投詞)
 
 テキスト:
 ${text}
