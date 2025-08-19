@@ -521,61 +521,42 @@ export default function DashboardPage() {
           </TabsContent>
 
           <TabsContent value="progress" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>レベル進捗</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium">現在のレベル</span>
-                      <Badge variant="secondary">{userProgress?.level || 'beginner'}</Badge>
+            {/* 学習統計を横いっぱいに表示 */}
+            <Card>
+              <CardHeader>
+                <CardTitle>学習統計</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {studySessions.length > 0 
+                        ? Math.round(studySessions.reduce((sum, session) => sum + (session.score || 0), 0) / studySessions.length)
+                        : 0}%
                     </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>次のレベルまで</span>
-                        <span>{userProgress?.experience_points || 0}/1000 XP</span>
-                      </div>
-                      <Progress value={Math.min(((userProgress?.experience_points || 0) / 1000) * 100, 100)} className="h-3" />
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      あと{Math.max(1000 - (userProgress?.experience_points || 0), 0)} XPで上級レベルに到達します！
-                    </div>
+                    <div className="text-sm text-muted-foreground mt-1">平均スコア</div>
                   </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>学習統計</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between">
-                      <span className="text-sm">平均スコア</span>
-                      <span className="font-medium">
-                        {studySessions.length > 0 
-                          ? Math.round(studySessions.reduce((sum, session) => sum + (session.score || 0), 0) / studySessions.length)
-                          : 0}%
-                      </span>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">
+                      {userProgress?.total_words_learned || 0}
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm">習得単語数</span>
-                      <span className="font-medium">{userProgress?.total_words_learned || 0}語</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm">最長連続日数</span>
-                      <span className="font-medium">{userProgress?.longest_streak_days || 0}日</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm">総学習時間</span>
-                      <span className="font-medium">{userProgress?.total_study_time_hours || 0}時間</span>
-                    </div>
+                    <div className="text-sm text-muted-foreground mt-1">習得単語数</div>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-orange-600">
+                      {userProgress?.longest_streak_days || 0}
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-1">最長連続日数</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-purple-600">
+                      {userProgress?.total_study_time_hours || 0}
+                    </div>
+                    <div className="text-sm text-muted-foreground mt-1">総学習時間</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
             <Card>
               <CardHeader>
